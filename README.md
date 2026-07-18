@@ -1,142 +1,133 @@
-# VI Linux Setup CLI
+# vi-linux-setup-cli
 
-A configuration-driven command-line tool for repeatable Linux workstation setup and provisioning.
+A practical Linux workstation setup automation project focused on DevOps and development workflows.
 
-`vi-linux-setup-cli` is intended to simplify the configuration of fresh Linux installations by automating package installation, developer tooling, DevOps utilities, and common workstation setup tasks.
+The project started as a repeatable setup script for configuring a personal Ubuntu-based workstation. The long-term goal is to evolve it into a small CLI tool with clear `plan`, `apply`, and `validate` commands.
 
-> **Status:** Initial development.
+## Purpose
 
-## Features
+This repository collects setup automation, validation checks, and workstation configuration notes for building a consistent Linux development environment.
 
-* Linux distribution detection
-* System package installation and updates
-* Reusable YAML configuration profiles
-* Developer and DevOps tool installation
-* Git and shell configuration
-* Dry-run mode
-* Installation validation
-* Structured execution logs
-* Safe and repeatable operations
+The current focus is on:
 
-## Planned CLI
+- base developer tooling
+- shell aliases
+- Vim configuration
+- terminal utilities
+- YAML and JSON tools
+- future Kubernetes and DevOps tooling setup
 
-```bash
-linux-setup init
-linux-setup plan
-linux-setup apply
-linux-setup status
-linux-setup validate
-```
+## Current Status
 
-Apply a predefined profile:
+This is an early MVP version.
+
+Currently available:
 
 ```bash
-linux-setup apply --profile minimal
-linux-setup apply --profile developer
-linux-setup apply --profile devops
+./scripts/setup.sh plan
+./scripts/setup.sh apply
+./scripts/validate.sh
 ```
 
-Preview changes without modifying the system:
+The setup script supports two actions:
 
-```bash
-linux-setup apply --profile devops --dry-run
-```
+- `plan` — shows what would be configured without making changes
+- `apply` — installs and configures the selected tools
 
-Use a custom configuration:
-
-```bash
-linux-setup apply --config workstation.yaml
-```
-
-## Configuration Example
-
-```yaml
-profile: devops
-
-system:
-  update_packages: true
-
-packages:
-  - git
-  - curl
-  - wget
-  - jq
-  - build-essential
-
-tools:
-  docker: true
-  kubectl: true
-  helm: true
-  k9s: true
-  terraform: true
-  ansible: true
-
-development:
-  python: true
-  vscode: true
-
-shell:
-  aliases: true
-  bash_completion: true
-```
-
-## Initial Platform Support
-
-* Ubuntu
-* Debian-based Linux distributions
-* Bash
-
-## Technology Stack
-
-* Python
-* Typer
-* Rich
-* PyYAML
-* pytest
-* Ruff
-* GitHub Actions
+The validation script checks whether the expected tools are available on the system.
 
 ## Repository Structure
 
 ```text
 vi-linux-setup-cli/
-├── src/
-│   └── vi_linux_setup/
-│       ├── cli.py
-│       ├── config.py
-│       ├── system.py
-│       ├── packages.py
-│       └── validation.py
-├── profiles/
-│   ├── minimal.yaml
-│   ├── developer.yaml
-│   └── devops.yaml
-├── tests/
-├── examples/
-├── pyproject.toml
-├── LICENSE
-└── README.md
+├── README.md
+├── docs/
+│   └── workstation-setup-notes.md
+└── scripts/
+    ├── setup.sh
+    └── validate.sh
 ```
 
-## Development Setup
+## Included in the Initial Setup
+
+The initial setup installs and validates common workstation tools such as:
+
+- `git`
+- `vim`
+- `curl`
+- `wget`
+- `jq`
+- `yq`
+- `tree`
+- `htop`
+- `ncdu`
+- `ripgrep`
+- `fzf`
+- `tmux`
+- `meld`
+
+It also configures basic shell aliases and creates a Vim configuration when one does not already exist.
+
+## Usage
+
+Preview the planned setup:
 
 ```bash
-git clone https://github.com/VLD62/vi-linux-setup-cli.git
-cd vi-linux-setup-cli
-
-python3 -m venv .venv
-source .venv/bin/activate
-
-pip install -e ".[dev]"
-pytest
+./scripts/setup.sh plan
 ```
 
-## Security
+Apply the setup:
 
-The tool does not store passwords, access tokens, private keys, or other credentials.
+```bash
+./scripts/setup.sh apply
+```
 
-Privileged operations use the operating system's standard `sudo` mechanism and are displayed before execution.
+Validate the workstation state:
 
-## License
+```bash
+./scripts/validate.sh
+```
 
-This project is licensed under the [MIT License](LICENSE).
+Reload shell configuration after applying changes:
+
+```bash
+source ~/.bashrc
+```
+
+## Design Principles
+
+The project follows a few simple principles:
+
+- keep the first version simple
+- prefer small, readable Bash functions
+- make setup steps safe to re-run
+- avoid overwriting existing user configuration without warning
+- validate installed tools after setup
+- evolve toward a CLI only after the automation is useful
+
+## Future Direction
+
+Planned additions:
+
+- Kubernetes tooling setup
+- Helm installation
+- Docker tooling checks
+- GNOME desktop preferences
+- Markdown tooling
+- optional launcher creation
+- improved validation output
+- eventual CLI wrapper
+
+Potential future command shape:
+
+```bash
+vi-setup plan
+vi-setup apply
+vi-setup validate
+```
+
+## Notes
+
+This project currently targets Ubuntu-based systems.
+
+It is intentionally built from real workstation setup tasks instead of being a generic dotfiles repository.
