@@ -126,6 +126,11 @@ vi-setup apply
 vi-setup validate
 ```
 
+## Assets
+
+Wallpaper assets are included for workstation customization purposes.
+Code in this repository is covered by the project license. Image assets may have separate usage rights.
+
 ## Notes
 
 This project currently targets Ubuntu-based systems.
