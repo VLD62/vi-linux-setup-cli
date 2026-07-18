@@ -85,6 +85,69 @@ EOF
   fi
 }
 
+configure_bash_workflow() {
+  local bashrc="$HOME/.bashrc"
+
+  if grep -q "vi-linux-setup bash workflow" "$bashrc"; then
+    log "Bash workflow already configured."
+    return
+  fi
+
+  cat >> "$bashrc" <<'EOF'
+
+# vi-linux-setup bash workflow
+# Adds:
+# - colored prompt
+# - current Git branch in the prompt
+# - command duration indicator for commands taking 3+ seconds
+
+__vi_git_branch() {
+  git symbolic-ref --short HEAD 2>/dev/null || git rev-parse --short HEAD 2>/dev/null
+}
+
+__vi_timer_prompt() {
+  local now
+  local duration
+
+  now=$(date +%s)
+
+  if [[ ${__vi_last_prompt_time:-0} -ne 0 ]]; then
+    duration=$((now - __vi_last_prompt_time))
+
+    if [[ $duration -ge 3 ]]; then
+      echo -e "\e[1;35m⏱ ${duration}s\e[0m"
+    fi
+  fi
+
+  __vi_last_prompt_time=$now
+}
+
+__vi_set_prompt() {
+  local branch
+  branch="$(__vi_git_branch)"
+
+  if [[ -n "$branch" ]]; then
+    PS1='\[\e[1;32m\]\u@\h\[\e[0m\] \[\e[1;34m\]\w\[\e[0m\] \[\e[1;33m\]'"${branch}"'\[\e[0m\]\n\$ '
+  else
+    PS1='\[\e[1;32m\]\u@\h\[\e[0m\] \[\e[1;34m\]\w\[\e[0m\]\n\$ '
+  fi
+}
+
+__vi_prompt_command() {
+  __vi_timer_prompt
+  __vi_set_prompt
+}
+
+if [[ "${PROMPT_COMMAND:-}" != *"__vi_prompt_command"* ]]; then
+  if [[ -n "${PROMPT_COMMAND:-}" ]]; then
+    PROMPT_COMMAND="__vi_prompt_command; ${PROMPT_COMMAND}"
+  else
+    PROMPT_COMMAND="__vi_prompt_command"
+  fi
+fi
+EOF
+}
+
 configure_vim() {
   local vimrc="$HOME/.vimrc"
 
@@ -160,6 +223,7 @@ main() {
 
   run_step "Install base developer packages" install_apt_packages
   run_step "Configure shell aliases" configure_shell_aliases
+  run_step "Configure Bash workflow" configure_bash_workflow
   run_step "Configure Vim" configure_vim
   run_step "Install yq" install_yq
 
