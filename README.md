@@ -12,10 +12,13 @@ The current focus is on:
 
 - base developer tooling
 - shell aliases
+- Bash prompt and terminal workflow
 - Vim configuration
 - terminal utilities
 - YAML and JSON tools
-- future Kubernetes and DevOps tooling setup
+- Kubernetes and DevOps tooling
+- Markdown preview tooling
+- workstation customization assets
 
 ## Current Status
 
@@ -43,12 +46,19 @@ vi-linux-setup-cli/
 ├── README.md
 ├── docs/
 │   └── workstation-setup-notes.md
-└── scripts/
-    ├── setup.sh
-    └── validate.sh
+├── scripts/
+│   ├── setup.sh
+│   └── validate.sh
+└── wallpapers/
+    ├── README.md
+    ├── desktop-01.jpg
+    ├── desktop-02.jpg
+    └── ...
 ```
 
-## Included in the Initial Setup
+## Included Setup Areas
+
+### Base Developer Tools
 
 The initial setup installs and validates common workstation tools such as:
 
@@ -66,7 +76,52 @@ The initial setup installs and validates common workstation tools such as:
 - `tmux`
 - `meld`
 
-It also configures basic shell aliases and creates a Vim configuration when one does not already exist.
+### Shell and Terminal Workflow
+
+The setup configures basic shell aliases and Bash workflow helpers.
+
+Included shell aliases:
+
+```bash
+alias k='kubectl'
+alias vi='vim'
+alias v='vim'
+alias svi='sudo vim'
+```
+
+The Bash workflow configuration adds:
+
+- colored prompt
+- current Git branch in the prompt
+- `$` prompt on a new line
+- command duration indicator for commands taking 3+ seconds
+
+### Vim Configuration
+
+The setup creates a default `~/.vimrc` only when one does not already exist.
+
+If an existing Vim configuration is found, the script skips it to avoid overwriting user settings.
+
+### DevOps Tooling
+
+The setup includes DevOps workstation tools such as:
+
+- `kubectl`
+- `helm`
+- `kubectx`
+- `kubens`
+- `k9s`
+- `stern`
+- `glow`
+
+Docker-related tools are validated but not automatically installed by default:
+
+- `docker`
+- `docker compose`
+- `lazydocker`
+- `dive`
+
+This keeps the setup safer for corporate or custom Linux environments where Docker installation may depend on internal repositories, proxy settings, or existing system policies.
 
 ## Usage
 
@@ -103,19 +158,26 @@ The project follows a few simple principles:
 - make setup steps safe to re-run
 - avoid overwriting existing user configuration without warning
 - validate installed tools after setup
+- avoid hardcoding corporate or machine-specific configuration
 - evolve toward a CLI only after the automation is useful
+
+## Assets
+
+Wallpaper assets are included for workstation customization purposes.
+
+Code in this repository is covered by the project license. Image assets may have separate usage rights.
 
 ## Future Direction
 
 Planned additions:
 
-- Kubernetes tooling setup
-- Helm installation
-- Docker tooling checks
+- tmux configuration
+- Docker tooling setup or optional installer
 - GNOME desktop preferences
-- Markdown tooling
+- wallpaper setup automation
 - optional launcher creation
 - improved validation output
+- optional configuration file support
 - eventual CLI wrapper
 
 Potential future command shape:
@@ -125,11 +187,6 @@ vi-setup plan
 vi-setup apply
 vi-setup validate
 ```
-
-## Assets
-
-Wallpaper assets are included for workstation customization purposes.
-Code in this repository is covered by the project license. Image assets may have separate usage rights.
 
 ## Notes
 
