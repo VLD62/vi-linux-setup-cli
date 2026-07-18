@@ -3,6 +3,7 @@
 set -euo pipefail
 
 ACTION="${1:-plan}"
+KUBERNETES_MINOR_VERSION="${KUBERNETES_MINOR_VERSION:-v1.34}"
 
 log() {
   echo "[INFO] $*"
@@ -214,6 +215,175 @@ install_yq() {
   sudo chmod +x /usr/local/bin/yq
 }
 
+ensure_kubernetes_apt_repo() {
+  if [[ -f /etc/apt/sources.list.d/kubernetes.list ]]; then
+    log "Kubernetes APT repository already configured."
+    return
+  fi
+
+  log "Configuring Kubernetes APT repository ${KUBERNETES_MINOR_VERSION}..."
+
+  sudo mkdir -p /etc/apt/keyrings
+
+  curl -fsSL "https://pkgs.k8s.io/core:/stable:/${KUBERNETES_MINOR_VERSION}/deb/Release.key" \
+    | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+  echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/${KUBERNETES_MINOR_VERSION}/deb/ /" \
+    | sudo tee /etc/apt/sources.list.d/kubernetes.list > /dev/null
+}
+
+ensure_helm_apt_repo() {
+  if [[ -f /etc/apt/sources.list.d/helm-stable-debian.list ]]; then
+    log "Helm APT repository already configured."
+    return
+  fi
+
+  log "Configuring Helm APT repository..."
+
+  sudo mkdir -p /etc/apt/keyrings
+
+  curl -fsSL https://packages.buildkite.com/helm-linux/helm-debian/gpgkey \
+    | sudo gpg --dearmor -o /etc/apt/keyrings/helm.gpg
+
+  echo "deb [signed-by=/etc/apt/keyrings/helm.gpg] https://packages.buildkite.com/helm-linux/helm-debian/any/ any main" \
+    | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list > /dev/null
+}
+
+ensure_charm_apt_repo() {
+  if [[ -f /etc/apt/sources.list.d/charm.list ]]; then
+    log "Charm APT repository already configured."
+    return
+  fi
+
+  log "Configuring Charm APT repository for glow..."
+
+  sudo mkdir -p /etc/apt/keyrings
+
+  curl -fsSL https://repo.charm.sh/apt/gpg.key \
+    | sudo gpg --dearmor -o /etc/apt/keyrings/charm.gpg
+
+  echo "deb [signed-by=/etc/apt/keyrings/charm.gpg] https://repo.charm.sh/apt/ * *" \
+    | sudo tee /etc/apt/sources.list.d/charm.list > /dev/null
+}
+
+install_kubectl() {
+  if is_installed kubectl; then
+    log "kubectl already installed."
+    return
+  fi
+
+  ensure_kubernetes_apt_repo
+  sudo apt-get update
+  sudo apt-get install -y kubectl
+}
+
+install_helm() {
+  if is_installed helm; then
+    log "helm already installed."
+    return
+  fi
+
+  ensure_helm_apt_repo
+  sudo apt-get update
+  sudo apt-get install -y helm
+}
+
+install_kubectx_kubens() {
+  if is_installed kubectx && is_installed kubens; then
+    log "kubectx and kubens already installed."
+    return
+  fi
+
+  sudo apt-get update
+  sudo apt-get install -y kubectx
+
+  if ! is_installed kubens; then
+    warn "kubens was not found as a separate command. On some systems it is installed together with kubectx."
+  fi
+}
+
+install_k9s() {
+  if is_installed k9s; then
+    log "k9s already installed."
+    return
+  fi
+
+  local tmp_dir
+  local download_url
+
+  tmp_dir="$(mktemp -d)"
+  log "Installing k9s from latest GitHub release..."
+
+  download_url="$(
+    curl -fsSL https://api.github.com/repos/derailed/k9s/releases/latest \
+      | jq -r '.assets[] | select(.name | test("Linux_amd64.tar.gz$")) | .browser_download_url' \
+      | head -n 1
+  )"
+
+  if [[ -z "$download_url" || "$download_url" == "null" ]]; then
+    rm -rf "$tmp_dir"
+    error "Could not find k9s Linux amd64 release asset."
+    exit 1
+  fi
+
+  curl -L "$download_url" -o "$tmp_dir/k9s.tar.gz"
+  tar -xzf "$tmp_dir/k9s.tar.gz" -C "$tmp_dir"
+  sudo install -m 0755 "$tmp_dir/k9s" /usr/local/bin/k9s
+
+  rm -rf "$tmp_dir"
+}
+
+install_stern() {
+  if is_installed stern; then
+    log "stern already installed."
+    return
+  fi
+
+  local tmp_dir
+  local download_url
+
+  tmp_dir="$(mktemp -d)"
+  log "Installing stern from latest GitHub release..."
+
+  download_url="$(
+    curl -fsSL https://api.github.com/repos/stern/stern/releases/latest \
+      | jq -r '.assets[] | select(.name | test("linux_amd64.tar.gz$")) | .browser_download_url' \
+      | head -n 1
+  )"
+
+  if [[ -z "$download_url" || "$download_url" == "null" ]]; then
+    rm -rf "$tmp_dir"
+    error "Could not find stern linux amd64 release asset."
+    exit 1
+  fi
+
+  curl -L "$download_url" -o "$tmp_dir/stern.tar.gz"
+  tar -xzf "$tmp_dir/stern.tar.gz" -C "$tmp_dir"
+  sudo install -m 0755 "$tmp_dir/stern" /usr/local/bin/stern
+
+  rm -rf "$tmp_dir"
+}
+
+install_glow() {
+  if is_installed glow; then
+    log "glow already installed."
+    return
+  fi
+
+  ensure_charm_apt_repo
+  sudo apt-get update
+  sudo apt-get install -y glow
+}
+
+install_devops_tools() {
+  install_kubectl
+  install_helm
+  install_kubectx_kubens
+  install_k9s
+  install_stern
+  install_glow
+}
+
 main() {
   require_ubuntu
 
@@ -226,6 +396,7 @@ main() {
   run_step "Configure Bash workflow" configure_bash_workflow
   run_step "Configure Vim" configure_vim
   run_step "Install yq" install_yq
+  run_step "Install DevOps tools" install_devops_tools
 
   echo
   if [[ "$ACTION" == "plan" ]]; then
